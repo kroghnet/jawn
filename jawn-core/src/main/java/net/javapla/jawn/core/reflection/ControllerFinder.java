@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import net.javapla.jawn.core.Response;
 import net.javapla.jawn.core.exceptions.MethodNotFoundException;
 
 import org.slf4j.Logger;
@@ -70,7 +71,7 @@ public final class ControllerFinder {
             // when controllers try to inherit from each other
             
             for (Method method : methods) {
-                if (!Modifier.isPublic(method.getModifiers()) || !method.getReturnType().equals(Void.TYPE)) continue;
+                if (!Modifier.isPublic(method.getModifiers()) || !method.getReturnType().equals(Response.class/*Void.TYPE*/)) continue;
                 
                 int count = method.getParameterCount();
                 

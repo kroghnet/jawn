@@ -1,5 +1,6 @@
 package net.javapla.jawn.core;
 
+import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.List;
 
