@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 
@@ -156,7 +157,7 @@ public class ImageHandlerBuilder {
              // calculate new coordinate to keep center
              x = Math.abs(original_width - new_width) >> 1; // divide by 2
          }
-
+         
          BufferedImage crop = Scalr.crop(image, x, y, new_width, new_height);
          image.flush();// cannot throw
          image = crop;
@@ -248,6 +249,17 @@ public class ImageHandlerBuilder {
              throw new ControllerException(e);
          }
          return uploadFolder + File.separatorChar + imagename;
+     }
+     
+     public byte[] asBytes() {
+         try {
+             ByteArrayOutputStream stream = new ByteArrayOutputStream();
+             ImageIO.write(image, fn.extension(), stream);
+             byte[] array = stream.toByteArray();
+             return array;
+         } catch (IOException e) {
+             throw new ControllerException(e);
+         }
      }
      
      public ImageHandlerBuilder clone() {
