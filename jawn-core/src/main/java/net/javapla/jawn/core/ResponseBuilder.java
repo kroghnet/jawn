@@ -1,7 +1,6 @@
 package net.javapla.jawn.core;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.text.MessageFormat;
 
 import javax.ws.rs.core.MediaType;
@@ -17,15 +16,19 @@ import net.javapla.jawn.core.exceptions.PathNotFoundException;
 //Results
 public class ResponseBuilder {
 
-    private final ResponseHolder holder;
+    /*private final ResponseHolder holder;
     public ResponseBuilder(ResponseHolder holder) {
         this.holder = holder;
-    }
+    }*/
     
     
     public static Response ok() {
         return new Response(Status.OK.getStatusCode());//.renderable(new NoHttpBody());
     }
+    /**
+     * Never has a message-body
+     * @return
+     */
     public static Response noContent() {
         return new Response(Status.NO_CONTENT.getStatusCode()).renderable(new NoHttpBody());
     }
@@ -37,6 +40,9 @@ public class ResponseBuilder {
     }
     public static Response notFound() {
         return new Response(Status.NOT_FOUND.getStatusCode()).renderable(new NoHttpBody());
+    }
+    public static Response badRequest() {
+        return new Response(Status.BAD_REQUEST.getStatusCode()).renderable(new NoHttpBody());
     }
     
     public static Response text(String text, int status) {
@@ -62,8 +68,7 @@ public class ResponseBuilder {
      */
     public Response text(String text) {
         Response response = ok();
-        holder.setControllerResponse(response);
-        response.contentType(MediaType.TEXT_PLAIN).renderable(text);
+        response.text(text);
         return response;
     }
     /**
@@ -81,14 +86,14 @@ public class ResponseBuilder {
     
     public Response text(byte[] text) {
         Response response = ok();
-        holder.setControllerResponse(response);
-        response.contentType(MediaType.TEXT_PLAIN).renderable(text);
+//        holder.setControllerResponse(response);
+        response.text(text);
         return response;
     }
     public Response text(char[] text) {
         Response response = ok();
-        holder.setControllerResponse(response);
-        response.contentType(MediaType.TEXT_PLAIN).renderable(text);
+//        holder.setControllerResponse(response);
+        response.text(text);
         return response;
     }
     
@@ -103,8 +108,8 @@ public class ResponseBuilder {
      */
     public final Response json(Object obj) {
         final Response response = ok();
-        holder.setControllerResponse(response);
-        response.contentType(MediaType.APPLICATION_JSON).renderable(obj);
+//        holder.setControllerResponse(response);
+        response.json(obj);
         return response;
     }
     
@@ -119,8 +124,7 @@ public class ResponseBuilder {
      */
     public Response xml(Object obj) {
         Response response = ok();
-        holder.setControllerResponse(response);
-        response.contentType(MediaType.APPLICATION_XML).renderable(obj);
+        response.xml(obj);
         return response;
     }
     
@@ -134,19 +138,10 @@ public class ResponseBuilder {
      * @throws PathNotFoundException thrown if file not found.
      */
     public Response sendFile(File file) throws PathNotFoundException {
-        try{
-            Response r = ResponseBuilder.ok()
-                    .addHeader("Content-Disposition", "attachment; filename=" + file.getName())
-                    .renderable(new FileInputStream(file))
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM);
-            holder.setControllerResponse(r);
-            return r;
-        }catch(Exception e){
-            throw new PathNotFoundException(e);
-        }
+        return ResponseBuilder.ok().sendFile(file);
     }
     
-    ResponseBuilder setStatus(int statusCode) {
+    /*ResponseBuilder setStatus(int statusCode) {
         holder.setControllerResponse(new Response(statusCode));
         return this;
     }
@@ -157,7 +152,7 @@ public class ResponseBuilder {
     ResponseBuilder setNotFound() {
         holder.setControllerResponse(notFound());
         return this;
-    }
+    }*/
     
     
     /**
@@ -165,7 +160,7 @@ public class ResponseBuilder {
      * @return wrapper methods
      */
     public StatusWrapper status() {
-        return new StatusWrapper(this);
+        return new StatusWrapper(/*this*/);
     }
     
     /**
@@ -173,54 +168,60 @@ public class ResponseBuilder {
      * 
      * @author MTD
      */
-    public class StatusWrapper {
-        private final ResponseBuilder builder;
-        StatusWrapper(ResponseBuilder builder) {
-            this.builder = builder;
-        }
+    public static class StatusWrapper {
+//        private final ResponseBuilder builder;
+//        StatusWrapper(ResponseBuilder builder) {
+//            this.builder = builder;
+//        }
         
         /**
          * 200 OK
          * @return 
          * @return The original builder
          */
-        public ResponseBuilder ok() {
+        public Response ok() {
 //            this.builder.controllerResponse.setStatus(javax.ws.rs.core.Response.Status.OK.getStatusCode());
 //            return builder;
-            builder.setStatus(Status.OK.getStatusCode()).setNoContent();
-            return builder;
+//            builder.setStatus(Status.OK.getStatusCode()).setNoContent();
+//            return builder;
+            return ResponseBuilder.ok();
         }
         /**
          * 204 No Content
          * @return The original builder
          */
-        public ResponseBuilder noContent() {
-            builder.setNoContent();
-            return builder;
+        public Response noContent() {
+//            builder.setNoContent();
+//            return builder;
+            return ResponseBuilder.noContent();
         }
         /**
          * 400 Bad Request
          * @return The original builder
          */
-        public ResponseBuilder badRequest() {
-            builder.setStatus(Status.BAD_REQUEST.getStatusCode());
-            return builder;
+        public Response badRequest() {
+//            builder.setStatus(Status.BAD_REQUEST.getStatusCode());
+//            return builder;
+            return ResponseBuilder.badRequest();
         }
         /**
          * 404 Not Found
          * @return The original builder
          */
-        public ResponseBuilder notFound() {
-            builder.setNotFound();
-            return builder;
+        public Response notFound() {
+//            builder.setNotFound();
+//            return builder;
+            return ResponseBuilder.notFound();
         }
         /**
          * 500 Internal Server Error
          * @return The original builder
          */
-        public ResponseBuilder internalServerError() {
-            builder.setStatus(Status.INTERNAL_SERVER_ERROR.getStatusCode());
-            return builder;
+        public Response internalServerError() {
+//            builder.setStatus(Status.INTERNAL_SERVER_ERROR.getStatusCode());
+//            return builder;
+            Response response = ResponseBuilder.status(Status.INTERNAL_SERVER_ERROR.getStatusCode());
+            return response;
         }
     }
 }

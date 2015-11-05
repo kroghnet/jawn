@@ -1,6 +1,5 @@
 package net.javapla.jawn.core.reflection;
 
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -61,10 +60,10 @@ public class ControllerActionInvoker {
             }
             throw new ControllerException(String.format("Action name (%s) not found in controller (%s)", route.getAction(), route.getController().getSimpleName()));
             */
-            AnnotatedType[] types = route.getActionMethod().getAnnotatedParameterTypes();
-            System.out.println("annotated  " + types);
-            route.getActionMethod().invoke(controller);
-            return controller.getControllerResponse();
+//            AnnotatedType[] types = route.getActionMethod().getAnnotatedParameterTypes();
+//            System.out.println("annotated  " + types);
+            Object response = route.getActionMethod().invoke(controller);
+            return (Response) response;//controller.getControllerResponse();
 
         } catch (InvocationTargetException e) {
             if(e.getCause() != null && e.getCause() instanceof  WebException){

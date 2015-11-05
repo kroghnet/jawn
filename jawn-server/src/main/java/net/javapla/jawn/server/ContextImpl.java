@@ -629,7 +629,7 @@ class ContextImpl implements ContextInternal {
             SessionFacade session = getSession(false);
             if (session != null && session.containsKey(FLASH_SESSION_KEYWORD)) {
                 Object object = session.get(FLASH_SESSION_KEYWORD);
-                controllerResponse.addViewObject(FLASH_KEYWORD, object);
+                controllerResponse.view(FLASH_KEYWORD, object);
                 session.remove(FLASH_SESSION_KEYWORD);
             }
         }

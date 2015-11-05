@@ -150,7 +150,7 @@ public class FrameworkEngine {
             } else {
                 Response response = ResponseBuilder
                         .status(status)
-                        .addAllViewObjects(getMapWithExceptionDataAndSession(e))
+                        .view(getMapWithExceptionDataAndSession(e))
                         .template(template)
                         .layout(layout)
                         .contentType(MediaType.TEXT_HTML);

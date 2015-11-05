@@ -13,7 +13,6 @@ import javax.imageio.ImageIO;
 import net.javapla.jawn.core.FormItem;
 import net.javapla.jawn.core.Response;
 import net.javapla.jawn.core.ResponseBuilder;
-import net.javapla.jawn.core.ResponseHolder;
 import net.javapla.jawn.core.exceptions.ControllerException;
 import net.javapla.jawn.core.exceptions.MediaTypeException;
 import net.javapla.jawn.core.http.Context;
@@ -25,19 +24,19 @@ import org.imgscalr.Scalr;
  * @author MTD
  */
 public class ImageHandlerBuilder {
-    private final ResponseHolder holder;
+//    private final ResponseHolder holder;
     private final Context context;
     
     private BufferedImage image;
     private final FileName fn = new FileName();
 
-    private ImageHandlerBuilder(ResponseHolder holder, Context context) {
-        this.holder = holder;
+    private ImageHandlerBuilder(/*ResponseHolder holder, */Context context) {
+//        this.holder = holder;
         this.context = context;
     }
     
-    public ImageHandlerBuilder(ResponseHolder holder, Context context, FormItem item) throws ControllerException {
-        this(holder, context);
+    public ImageHandlerBuilder(/*ResponseHolder holder,*/ Context context, FormItem item) throws ControllerException {
+        this(/*holder, */context);
         try {
             this.image = ImageIO.read(item.getInputStream());
             fn.updateNameAndExtension(item.getFileName());
@@ -48,8 +47,8 @@ public class ImageHandlerBuilder {
             throw new ControllerException(e);
         }
     }
-    public ImageHandlerBuilder(ResponseHolder holder, Context context, File file) throws ControllerException {
-        this(holder, context);
+    public ImageHandlerBuilder(/*ResponseHolder holder, */Context context, File file) throws ControllerException {
+        this(/*holder, */context);
         try {
             this.image = ImageIO.read(file);
             fn.updateNameAndExtension(file.getName());
@@ -60,8 +59,8 @@ public class ImageHandlerBuilder {
             throw new ControllerException(e);
         }
     }
-    public ImageHandlerBuilder(ResponseHolder holder, Context context, byte[] bytes, String fileName) throws ControllerException {
-        this(holder, context);
+    public ImageHandlerBuilder(/*ResponseHolder holder,*/ Context context, byte[] bytes, String fileName) throws ControllerException {
+        this(/*holder, */context);
         try {
             this.image = ImageIO.read(new ByteArrayInputStream(bytes));
             fn.updateNameAndExtension(fileName);
@@ -215,7 +214,7 @@ public class ImageHandlerBuilder {
       * @throws ControllerException If something go wrong during write to the outputstream
       * @throws MediaTypeException If a suitable writer for the image extension could not be found.
       */
-     public void send() throws ControllerException, MediaTypeException {
+     public Response send() throws ControllerException, MediaTypeException {
          String extension = fn.extension();
 
          int status = 200;
@@ -226,7 +225,8 @@ public class ImageHandlerBuilder {
                  .status(status)
                  .addSupportedContentType("image/*")
                  .renderable(this.image);
-         holder.setControllerResponse(response);
+//         holder.setControllerResponse(response);
+         return response;
      }
 
      /**
@@ -263,7 +263,7 @@ public class ImageHandlerBuilder {
      }
      
      public ImageHandlerBuilder clone() {
-         ImageHandlerBuilder builder = new ImageHandlerBuilder(holder, context);
+         ImageHandlerBuilder builder = new ImageHandlerBuilder(/*holder, */context);
          builder.fn.updateName(this.fn.filename());
          builder.fn.updateExtension(this.fn.extension());
          builder.image = deepCopy(this.image);

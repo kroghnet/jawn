@@ -56,11 +56,14 @@ import com.google.inject.Injector;
  *
  * @author MTD
  */
-public abstract class Controller implements ResponseHolder {
+public abstract class Controller /*implements ResponseHolder*/ {
     
  // Standard behaviour is to look for HTML template
-    protected Response response = ResponseBuilder.ok().contentType(MediaType.TEXT_HTML);
-    public void setControllerResponse(Response r) {
+//    protected Response response = ResponseBuilder.ok().contentType(MediaType.TEXT_HTML);
+    protected Response standard() {
+        return ResponseBuilder.ok().contentType(MediaType.TEXT_HTML);
+    }
+    /*public void setControllerResponse(Response r) {
         response = r;
     }
     public Response getControllerResponse() {
@@ -71,7 +74,7 @@ public abstract class Controller implements ResponseHolder {
     
     protected String layout() {
         return null;
-    }
+    }*/
     
     
 //    @Inject
@@ -91,7 +94,9 @@ public abstract class Controller implements ResponseHolder {
 
     
     // index is always available
-    public void index() {}
+    public Response index() {
+        return standard();
+    }
 
 
     /**
@@ -109,11 +114,17 @@ public abstract class Controller implements ResponseHolder {
      * @return 
      * @return instance of {@link RenderBuilder}, which is used to provide additional parameters.
      */
+    protected NewRenderBuilder render(Response response, String template) {
+        String targetTemplate = template.startsWith("/")? template: getControllerPath(getClass())
+                + "/" + template;
+
+        return internalRender(targetTemplate, response);
+    }
     protected NewRenderBuilder render(String template) {
         String targetTemplate = template.startsWith("/")? template: getControllerPath(getClass())
                 + "/" + template;
 
-        return internalRender(targetTemplate);
+        return internalRender(targetTemplate, standard());
     }
 
     /**
@@ -122,9 +133,13 @@ public abstract class Controller implements ResponseHolder {
      *
      * @return instance of {@link RenderBuilder}, which is used to provide additional parameters.
      */
+    protected NewRenderBuilder render(Response response){
+        String template = getControllerPath(getClass()) + "/" + getRoute().getActionName();
+        return internalRender(template, response);
+    }
     protected NewRenderBuilder render(){
         String template = getControllerPath(getClass()) + "/" + getRoute().getActionName();
-        return internalRender(template);
+        return internalRender(template, standard());
     }
 
 
@@ -139,14 +154,14 @@ public abstract class Controller implements ResponseHolder {
      * @return 
      * @return instance of {@link RenderBuilder}, which is used to provide additional parameters.
      */
-    protected NewRenderBuilder render(String template, Map<String, Object> values) {
-        view(values);
-        return internalRender(template);
+    protected NewRenderBuilder render(Response response, String template, Map<String, Object> values) {
+        response.view(values);
+        return internalRender(template,response);
     }
     
-    private NewRenderBuilder internalRender(String template) {
+    private NewRenderBuilder internalRender(String template, Response response) {
         response.template(template);
-        return new NewRenderBuilder(response);
+        return new NewRenderBuilder(response);//TODO use Response
     }
 
 
@@ -175,6 +190,10 @@ public abstract class Controller implements ResponseHolder {
         public NewRenderBuilder template(String template) {
             response.template(template);
             return this;
+        }
+        
+        public Response build() {
+            return response;
         }
     }
 
@@ -309,11 +328,11 @@ public abstract class Controller implements ResponseHolder {
     }
 
  
-    protected Map<String, Object> values() {
+    /*protected Map<String, Object> values() {
 //        return context.getViewObjects();//getValues();
 //        return context.getNewControllerResponse().getViewObjects();
         return response.getViewObjects();
-    }
+    }*/
 
     /**
      * Assigns value that will be passed into view.
@@ -321,8 +340,11 @@ public abstract class Controller implements ResponseHolder {
      * @param name name of object to be passed to view
      * @param value object to be passed to view
      */
-    protected void view(String name, Object value) {
-        response.addViewObject(name, value);
+    protected Response view(String name, Object value) {
+        return standard().view(name, value);
+    }
+    protected Response view(Response response, String name, Object value) {
+        return response.view(name, value);
     }
 
 
@@ -336,6 +358,12 @@ public abstract class Controller implements ResponseHolder {
         for(String key:values.keySet() ){
             view(key, values.get(key));
         }
+    }
+    protected Response view(Response response, Map<String, Object> values) {
+        for(String key:values.keySet() ){
+            view(response, key, values.get(key));
+        }
+        return response;
     }
     
     @SuppressWarnings("unchecked")
@@ -422,7 +450,7 @@ public abstract class Controller implements ResponseHolder {
     
 
     protected final ResponseBuilder respond() {
-        return new ResponseBuilder(this);
+        return new ResponseBuilder(/*this*/);
     }
 
     
@@ -435,8 +463,8 @@ public abstract class Controller implements ResponseHolder {
      * @param path - expected to be a path within the application.
      * @return instance of {@link HttpSupport.HttpBuilder} to accept additional information.
      */
-    protected void redirect(String path) {
-        response = ResponseBuilder.redirect(path);
+    protected Response redirect(String path) {
+        return ResponseBuilder.redirect(path);
     }
 
     /**
@@ -445,8 +473,8 @@ public abstract class Controller implements ResponseHolder {
      * @param url absolute URL: <code>http://domain/path...</code>.
      * @return {@link HttpSupport.HttpBuilder}, to accept additional information.
      */
-    protected void redirect(URL url) {
-        redirect(url.toString());
+    protected Response redirect(URL url) {
+        return redirect(url.toString());
     }
 
 
@@ -458,10 +486,10 @@ public abstract class Controller implements ResponseHolder {
      * the request does not provide a "Referrer" header.
      * @return {@link HttpSupport.HttpBuilder}, to accept additional information.
      */
-    protected void redirectToReferrer(String defaultReference) {
+    protected Response redirectToReferrer(String defaultReference) {
         String referrer = context.requestHeader("Referer");
         referrer = referrer == null? defaultReference: referrer;
-        redirect(referrer);
+        return redirect(referrer);
     }
 
 
@@ -471,10 +499,10 @@ public abstract class Controller implements ResponseHolder {
      *
      * @return {@link HttpSupport.HttpBuilder}, to accept additional information.
      */
-    protected void redirectToReferrer() {
+    protected Response redirectToReferrer() {
         String referrer = context.requestHeader("Referer");
         referrer = referrer == null? context.contextPath(): referrer;
-        redirect(referrer);
+        return redirect(referrer);
     }
 
 
@@ -487,8 +515,8 @@ public abstract class Controller implements ResponseHolder {
      * @param id id to redirect to.
      * @return {@link HttpSupport.HttpBuilder}, to accept additional information.
      */
-    protected <T extends Controller> void redirect(Class<T> controllerClass, String action, Object id){
-        redirect(controllerClass, CollectionUtil.map("action", action, "id", id));
+    protected <T extends Controller> Response redirect(Class<T> controllerClass, String action, Object id){
+        return redirect(controllerClass, CollectionUtil.map("action", action, "id", id));
     }
 
     /**
@@ -499,8 +527,8 @@ public abstract class Controller implements ResponseHolder {
      * @param id id to redirect to.
      * @return {@link HttpSupport.HttpBuilder}, to accept additional information.
      */
-    protected <T extends Controller> /*HttpBuilder*/void redirect(Class<T> controllerClass, Object id){
-        /*return */redirect(controllerClass, CollectionUtil.map("id", id));
+    protected <T extends Controller> /*HttpBuilder*/Response redirect(Class<T> controllerClass, Object id){
+        return redirect(controllerClass, CollectionUtil.map("id", id));
     }
 
     /**
@@ -511,8 +539,8 @@ public abstract class Controller implements ResponseHolder {
      * @param action action to redirect to.
      * @return {@link HttpSupport.HttpBuilder}, to accept additional information.
      */
-    protected <T extends Controller> void redirect(Class<T> controllerClass, String action){
-        redirect(controllerClass, CollectionUtil.map("action", action));
+    protected <T extends Controller> Response redirect(Class<T> controllerClass, String action){
+        return redirect(controllerClass, CollectionUtil.map("action", action));
     }
 
     /**
@@ -524,8 +552,8 @@ public abstract class Controller implements ResponseHolder {
      *
      * @return {@link HttpSupport.HttpBuilder}, to accept additional information.
      */
-    protected void redirect() {
-        redirect(getRoute().getController());
+    protected Response redirect() {
+        return redirect(getRoute().getController());
     }
     
     /**
@@ -535,8 +563,8 @@ public abstract class Controller implements ResponseHolder {
      * @return
      * @author MTD
      */
-    protected void redirect(Map<String, String> params) {
-        redirect(getRoute().getController(), params);
+    protected Response redirect(Map<String, String> params) {
+        return redirect(getRoute().getController(), params);
     }
 
     /**
@@ -546,8 +574,8 @@ public abstract class Controller implements ResponseHolder {
      * @param <T> class extending {@link Controller}
      * @return {@link HttpSupport.HttpBuilder}, to accept additional information.
      */
-    protected <T extends Controller> void redirect(Class<T> controllerClass){
-        redirect(controllerClass, new HashMap<String, String>());
+    protected <T extends Controller> Response redirect(Class<T> controllerClass){
+        return redirect(controllerClass, new HashMap<String, String>());
     }
 
     /**
@@ -585,7 +613,7 @@ public abstract class Controller implements ResponseHolder {
      * @param params map with request parameters.
      * @return {@link HttpSupport.HttpBuilder}, to accept additional information.
      */
-    protected <T extends Controller> /*HttpBuilder*/void redirect(Class<T> controllerClass, Map<String, String> params){
+    protected <T extends Controller> /*HttpBuilder*/Response redirect(Class<T> controllerClass, Map<String, String> params){
         String controllerPath = RouterHelper.getReverseRoute(controllerClass);
         String contextPath = context.contextPath();
         String action = params.get("action") != null? params.get("action") : null;
@@ -600,7 +628,7 @@ public abstract class Controller implements ResponseHolder {
         params.remove("#");
 
         String uri = contextPath + lang + RouterHelper.generate(controllerPath, action, id, params) + anchor;
-        redirect(uri);
+        return redirect(uri);
     }
     
     
@@ -1024,21 +1052,21 @@ public abstract class Controller implements ResponseHolder {
      * @return the path to the saved image
      */
     protected ImageHandlerBuilder image(FormItem item) throws ControllerException {
-        return new ImageHandlerBuilder(this, context, item);
+        return new ImageHandlerBuilder(/*this,*/ context, item);
     }
     protected ImageHandlerBuilder image(File file) throws PathNotFoundException, ControllerException {
         if (!file.canRead())
             throw new PathNotFoundException(file.getPath());
-        return new ImageHandlerBuilder(this, context, file);
+        return new ImageHandlerBuilder(/*this, */context, file);
     }
     protected ImageHandlerBuilder image(String name) throws PathNotFoundException, ControllerException {
         File file = new File(getRealPath(name));
         if (!file.canRead())
             throw new PathNotFoundException(file.getPath());
-        return new ImageHandlerBuilder(this, context, file);
+        return new ImageHandlerBuilder(/*this, */context, file);
     }
     protected ImageHandlerBuilder image(byte[] bytes, String fileName) throws ControllerException {
-        return new ImageHandlerBuilder(this, context, bytes, fileName);
+        return new ImageHandlerBuilder(/*this, */context, bytes, fileName);
     }
     
     
@@ -1525,7 +1553,7 @@ public abstract class Controller implements ResponseHolder {
      * @param in input stream to read bytes from.
      * @return {@link HttpSupport.HttpBuilder}, to accept additional information.
      */
-    protected /*HttpBuilder*/void streamOut(InputStream in) {
+    protected /*HttpBuilder*/Response streamOut(InputStream in) {
 //        StreamResponse resp = new StreamResponse(context, in);
 //        context.setControllerResponse(resp);
 //        return new HttpBuilder(resp);
@@ -1535,7 +1563,8 @@ public abstract class Controller implements ResponseHolder {
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .renderable(in);
 //        context.setControllerResponse(r);
-        response = r;
+        //response = r;
+        return r;
     }
 
 
@@ -1567,7 +1596,7 @@ public abstract class Controller implements ResponseHolder {
      *
      * @return instance of output stream to send raw data directly to HTTP client.
      */
-    protected OutputStream outputStream(){
+    protected Response outputStream(){
         return outputStream(null, null, 200);
     }
 
@@ -1577,7 +1606,7 @@ public abstract class Controller implements ResponseHolder {
      * @param contentType content type
      * @return instance of output stream to send raw data directly to HTTP client.
      */
-    protected OutputStream outputStream(String contentType) {
+    protected Response outputStream(String contentType) {
         return outputStream(contentType, null, 200);
     }
 
@@ -1590,13 +1619,13 @@ public abstract class Controller implements ResponseHolder {
      * @param status status.
      * @return instance of output stream to send raw data directly to HTTP client.
      */
-    protected OutputStream outputStream(String contentType, Map<String, String> headers, int status) {
+    protected Response outputStream(String contentType, Map<String, String> headers, int status) {
 //        context.setControllerResponse(new NopResponse(context, contentType, status));
         //------
         Response r = new Response(200);
         r.contentType(contentType).status(status);
 //        context.setControllerResponse(r);
-        response = r;
+        //response = r;
         
         try {
             if (headers != null) {
@@ -1606,7 +1635,8 @@ public abstract class Controller implements ResponseHolder {
                 }
             }
 
-            return context.responseOutputStream();
+            //return context.responseOutputStream();
+            return r; //TODO might not work as expected now
         }catch(Exception e){
             throw new ControllerException(e);
         }
@@ -1619,7 +1649,7 @@ public abstract class Controller implements ResponseHolder {
      * set to 200.
      * @return instance of a writer for writing content to HTTP client.
      */
-    protected PrintWriter writer(){
+    protected Response writer(){
         return writer(null, null, 200);
     }
 
@@ -1631,9 +1661,9 @@ public abstract class Controller implements ResponseHolder {
      * @param status will be sent to browser.
      * @return instance of a writer for writing content to HTTP client.
      */
-    protected PrintWriter writer(String contentType, Map<String, String> headers, int status){
+    protected Response writer(String contentType, Map<String, String> headers, int status){
 //        context.setControllerResponse(new NopResponse(context, contentType, status));
-        response = ResponseBuilder.noBody(status).contentType(contentType);
+        Response response = ResponseBuilder.noBody(status).contentType(contentType);
         //TODO TEST
         try{
             if (headers != null) {
@@ -1643,7 +1673,8 @@ public abstract class Controller implements ResponseHolder {
                 }
             }
 
-            return context.responseWriter();
+            //return context.responseWriter();
+            return response; // TODO might not work as expected now
         }catch(Exception e){
             throw new ControllerException(e);
         }
@@ -1718,7 +1749,7 @@ public abstract class Controller implements ResponseHolder {
         TemplateEngine engine = manager.getTemplateEngineForContentType(MediaType.TEXT_HTML);
         engine.invoke(
                 context, 
-                ResponseBuilder.ok().addAllViewObjects(values).template(template).layout(null), 
+                ResponseBuilder.ok().view(values).template(template).layout(null), 
                 new ResponseStream() {
                     @Override
                     public Writer getWriter() throws IOException {

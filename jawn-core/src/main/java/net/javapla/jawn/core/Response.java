@@ -1,9 +1,16 @@
 package net.javapla.jawn.core;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.ws.rs.core.MediaType;
+
+import net.javapla.jawn.core.exceptions.PathNotFoundException;
 
 //Result
 public class Response {
@@ -116,6 +123,10 @@ public class Response {
     public String layout() {
         return layout;
     }
+    public Response noLayout() {
+        layout = null;
+        return this;
+    }
     
     public Map<String, String> headers() {
         return headers;
@@ -125,11 +136,11 @@ public class Response {
         return this;
     }
     
-    public Response addViewObject(String name, Object value) {
+    public Response view(String name, Object value) {
         viewObjects.put(name, value);
         return this;
     }
-    public Response addAllViewObjects(Map<String, Object> values) {
+    public Response view(Map<String, Object> values) {
         viewObjects.putAll(values);
         return this;
     }
@@ -164,4 +175,88 @@ public class Response {
         // intentionally left empty. Just a marker class.
     }
     
+    
+    /**
+     * This method will send the text to a client verbatim. It will not use any layouts. Use it to build app.services
+     * and to support AJAX.
+     *
+     * @param text text of response.
+     * @return {@link HttpSupport.HttpBuilder}, to accept additional information.
+     */
+    public Response text(String text) {
+        contentType(MediaType.TEXT_PLAIN).renderable(text);
+        return this;
+    }
+    /**
+     * This method will send the text to a client verbatim. It will not use any layouts. Use it to build app.services
+     * and to support AJAX.
+     * 
+     * @param text A string containing &quot;{index}&quot;, like so: &quot;Message: {0}, error: {1}&quot;
+     * @param objects A varargs of objects to be put into the <code>text</code>
+     * @return {@link HttpSupport.HttpBuilder}, to accept additional information.
+     * @see MessageFormat#format
+     */
+    public Response text(String text, Object...objects) {
+        return text(MessageFormat.format(text, objects));
+    }
+    
+    public Response text(byte[] text) {
+        contentType(MediaType.TEXT_PLAIN).renderable(text);
+        return this;
+    }
+    public Response text(char[] text) {
+//        holder.setControllerResponse(response);
+        contentType(MediaType.TEXT_PLAIN).renderable(text);
+        return this;
+    }
+    
+    /**
+     * This method will send a JSON response to the client.
+     * It will not use any layouts.
+     * Use it to build app.services and to support AJAX.
+     * 
+     * @param obj
+     * @return {@link Response}, to accept additional information. The response is automatically
+     * has its content type set to "application/json"
+     */
+    public final Response json(Object obj) {
+//        holder.setControllerResponse(response);
+        contentType(MediaType.APPLICATION_JSON).renderable(obj);
+        return this;
+    }
+    
+    /**
+     * This method will send a XML response to the client.
+     * It will not use any layouts.
+     * Use it to build app.services.
+     * 
+     * @param obj
+     * @return {@link Response}, to accept additional information. The response is automatically
+     * has its content type set to "application/xml"
+     */
+    public Response xml(Object obj) {
+//        holder.setControllerResponse(response);
+        contentType(MediaType.APPLICATION_XML).renderable(obj);
+        return this;
+    }
+    
+    /**
+     * Convenience method for downloading files. This method will force the browser to find a handler(external program)
+     *  for  this file (content type) and will provide a name of file to the browser. This method sets an HTTP header
+     * "Content-Disposition" based on a file name.
+     *
+     * @param file file to download.
+     * @return builder instance.
+     * @throws PathNotFoundException thrown if file not found.
+     */
+    public Response sendFile(File file) throws PathNotFoundException {
+        try{
+              addHeader("Content-Disposition", "attachment; filename=" + file.getName());
+              renderable(new FileInputStream(file));
+              contentType(MediaType.APPLICATION_OCTET_STREAM);
+            return this;
+        }catch(Exception e){
+            throw new PathNotFoundException(e);
+        }
+    }
 }
