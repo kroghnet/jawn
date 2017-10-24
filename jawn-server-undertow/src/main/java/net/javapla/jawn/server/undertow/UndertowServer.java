@@ -26,11 +26,11 @@ public class UndertowServer implements Server {
     @Override
     public void start(ServerConfig serverConfig) throws Exception {
         shutdownHandler = new GracefulShutdownHandler(createHandler(dispatcher, serverConfig.contextPath()));
-        
+
         final Builder builder = Undertow.builder()
             .setHandler(shutdownHandler)
             .addHttpListener(serverConfig.port(), serverConfig.host())
-            
+
             // from undertow-edge benchmark
             .setServerOption(UndertowOptions.ALWAYS_SET_KEEP_ALIVE, false) //don't send a keep-alive header for HTTP/1.1 requests, as it is not required
             ;

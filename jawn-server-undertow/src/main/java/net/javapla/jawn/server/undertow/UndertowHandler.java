@@ -2,6 +2,8 @@ package net.javapla.jawn.server.undertow;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.server.session.Session;
+import io.undertow.util.Sessions;
 
 public class UndertowHandler implements HttpHandler {
     
@@ -20,6 +22,8 @@ public class UndertowHandler implements HttpHandler {
             return;
         }
         //exchange.getResponseHeaders().add(HttpString.tryFromString("Server"), "Undertow");
+        
+        Session session = Sessions.getOrCreateSession(exchange);
         
         handler.handle(new UndertowRequest(exchange, contextPath), new UndertowResponse(exchange));
     }
