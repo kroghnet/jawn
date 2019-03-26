@@ -56,10 +56,21 @@ public class RouteBuilder {
         return new RouteBuilder(HttpMethod.HEAD);
     }
     
+    public static RouteBuilder options() {
+        return new RouteBuilder(HttpMethod.OPTIONS);
+    }
+    
     public static RouteBuilder method(HttpMethod method) {
         return new RouteBuilder(method);
     }
     
+    public static RouteBuilder route(Route route) {
+        RouteBuilder builder = new RouteBuilder(route.getHttpMethod()).route(route.getUri());
+        builder.action = route.getAction();
+        builder.actionName = route.getActionName();
+        
+        return builder;
+    }
     
     /**
      * Used for custom routes
@@ -75,7 +86,7 @@ public class RouteBuilder {
     
     public RouteBuilder to(Class<? extends Controller> type) {
         this.controller = type;
-        setAction(Constants.DEFAULT_ACTION_NAME);
+        //setAction(Constants.DEFAULT_ACTION_NAME);
         return this;
     }
     
@@ -102,9 +113,10 @@ public class RouteBuilder {
         return this;
     }
     
-    private void setAction(String action) {
+    private RouteBuilder setAction(String action) {
         this.action = action;
         this.actionName = constructActionName(action, httpMethod);
+        return this;
     }
     
     ResponseFunction func;
@@ -163,9 +175,9 @@ public class RouteBuilder {
             route.setResponseFunction(func, true);
         } else if (controller != null) {
             try {
-                route.setActionMethod(controller.getMethod(action));
+                //route.setActionMethod(controller.getMethod(action));
                 route.setResponseFunction(invoker::executeAction, false);
-            } catch (NoSuchMethodException | SecurityException ignore) {}
+            } catch (/*NoSuchMethodException | */SecurityException ignore) {}
         }
         
         return route;
@@ -178,13 +190,23 @@ public class RouteBuilder {
         
         Route newRoute = new Route(route.uri, route.getHttpMethod(), route.getController(), action, actionName, route.getFilterChain());
         try {
+            //newRoute.setActionMethod(route.getController().getMethod(action));
+            //experimental
+            newRoute.setResponseFunction(route.func, false);
+        } catch (/*NoSuchMethodException | */SecurityException ignore) {}
+        
+        return newRoute;
+    }
+    
+    /*final static Route build(Route route, Class<? extends Controller> type) {
+        Route newRoute = new Route(route);
+        try {
+            newRoute.
             newRoute.setActionMethod(route.getController().getMethod(action));
             //experimental
             newRoute.setResponseFunction(route.func, false);
         } catch (NoSuchMethodException | SecurityException ignore) {}
-        
-        return newRoute;
-    }
+    }*/
     
     private static final FilterChain filterChainEnd = new FilterChainEnd();
     private static final FilterChain buildFilterChain(LinkedList<Filter> filters) {

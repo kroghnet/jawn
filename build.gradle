@@ -11,20 +11,20 @@ allprojects {
 
     // maven metadata
     group = "net.javapla.jawn"
-    version = "0.9.14-SNAPSHOT"
+    version = "0.9.14"
 
     tasks.withType(Javadoc).all { enabled = true }
 }
 
 subprojects {
     apply plugin: 'eclipse'
-    apply plugin: 'jacoco'
+//    apply plugin: 'jacoco'
 //    apply plugin: 'net.ltgt.errorprone'
 
 
     // compiler options
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_1_10
+    targetCompatibility = JavaVersion.VERSION_1_10
 
     repositories { mavenCentral() }
     
@@ -49,9 +49,9 @@ subprojects {
         ignoreFailures false
         
     }
-    jacocoTestReport {
+    /*jacocoTestReport {
         dependsOn test
-    }
+    }*/
 
     /*tasks.withType(JavaCompile) {
      options.compilerArgs += [ '-Xep:DeadException:WARN', '-Xep:GuardedByValidator:OFF' ]
